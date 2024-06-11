@@ -11,7 +11,7 @@ def print_banner():
  |  \\| | / _ \\| |  | | | \\___ \\| |   |  _|   / _ \\ | ' / 
  | |\\  |/ ___ \\ |__| |_| |___) | |___| |___ / ___ \\| . \\ 
  |_| \\_/_/   \\_\\____\\___/|____/|_____|_____/_/   \\_\\_|\\_\\
-                                         By:white v1.0
+                                            By:white v1.0
     """
     print(banner)
 
@@ -119,9 +119,9 @@ class NacosConfigExporter:
     def export_all_configs(self):
         namespaces = self.get_all_namespaces()
 
-        base_url_host = urlparse(self.base_url).netloc.replace(":", "_")
+        base_url_host = "./results/"+urlparse(self.base_url).netloc.replace(":", "_")
         os.makedirs(base_url_host, exist_ok=True)
-
+        
         for namespace in namespaces:
             namespace_dir = os.path.join(base_url_host, namespace['namespaceShowName'])
             os.makedirs(namespace_dir, exist_ok=True)
@@ -149,6 +149,8 @@ class NacosConfigExporter:
 
 
 def process_base_url(base_url, proxy, timeout):
+    if base_url[-len(base_url):] == '/':
+        base_url = base_url[:-1]
     if initial_url_check(base_url,timeout):
         # 获取权限
         auth_checker = NacosAuthChecker(base_url, proxy, timeout)
