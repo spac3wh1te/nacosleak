@@ -50,7 +50,7 @@ class NacosAuthChecker:
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
-            print(f"Unauthorized access check request timed out for {self.base_url}.")
+            print(f"{self.base_url} Unauthorized access check request timed out for.")
         except requests.exceptions.RequestException as e:
             print(f"Unauthorized access check request failed for {self.base_url}: {e}")
         return False
@@ -63,7 +63,7 @@ class NacosAuthChecker:
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
-            print(f"Default JWT token check request timed out for {self.base_url}.")
+            print(f"{self.base_url} Default JWT token check request timed out for.")
         except requests.exceptions.RequestException as e:
             print(f"Default JWT token check request failed for {self.base_url}: {e}")
         return False
@@ -76,7 +76,7 @@ class NacosAuthChecker:
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
-            print(f"Server identity bypass check request timed out for {self.base_url}.")
+            print(f"{self.base_url} Server identity bypass check request timed out for.")
         except requests.exceptions.RequestException as e:
             print(f"Server identity bypass check request failed for {self.base_url}: {e}")
         return False
