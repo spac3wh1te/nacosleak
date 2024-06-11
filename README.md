@@ -20,4 +20,8 @@ optional arguments:
   --proxy PROXY         Proxy server (eg: http://127.0.0.1:8080)
   --timeout TIMEOUT     Request timeout in seconds (default: 3)
 ```
+<<<<<<< HEAD
+=======
+
+>>>>>>> eab2c28bbf93bf0ac7b36ad5ab9ff93b324c804f
 
