@@ -4,7 +4,7 @@
  |  \| | / _ \| |  | | | \___ \| |   |  _|   / _ \ | ' /
  | |\  |/ ___ \ |__| |_| |___) | |___| |___ / ___ \| . \
  |_| \_/_/   \_\____\___/|____/|_____|_____/_/   \_\_|\_\
-                                         By:white v1.0
+                                         By:white v0.1
 
 usage: nacosleak.py [-h] [-t TARGET] [-f FILE] [--proxy PROXY]
                     [--timeout TIMEOUT]
