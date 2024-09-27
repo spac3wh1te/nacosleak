@@ -54,7 +54,7 @@ class NacosAuthChecker:
         url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&search=accurate"
         try:
             response = self.session.get(
-                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout, verify=False)
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
@@ -69,7 +69,7 @@ class NacosAuthChecker:
         self.headers['Authorization'] = self.token
         try:
             response = self.session.get(
-                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout, verify=False)
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
@@ -84,7 +84,7 @@ class NacosAuthChecker:
         self.headers['serverIdentity'] = "security"
         try:
             response = self.session.get(
-                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout, verify=False)
             if response.status_code == 200:
                 return True
         except requests.exceptions.Timeout:
@@ -119,7 +119,7 @@ class NacosConfigExporter:
         url = f"{self.base_url}/nacos/v1/console/namespaces"
         try:
             response = self.session.get(
-                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+                url, headers=self.headers, proxies=self.proxies, timeout=self.timeout, verify=False)
             if response.status_code == 200:
                 namespaces = response.json().get('data', [])
                 return namespaces
@@ -146,8 +146,7 @@ class NacosConfigExporter:
             url = (f"{self.base_url}/nacos/v1/cs/configs?pageNo=1&pageSize=100"
                    f"&search=accurate&dataId=&group=&tenant={namespace['namespace']}&accessToken={self.token}&username={self.username}")
             try:
-                response = self.session.get(
-                    url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
+                response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
                 if response.status_code == 200:
                     configs = response.json().get('pageItems', [])
                     for config in configs:
@@ -171,8 +170,8 @@ class NacosConfigExporter:
 
 
 def process_base_url(base_url, proxy, timeout):
-    if base_url[-len(base_url):] == '/':
-        base_url = base_url[:-1]
+    if base_url.endswith('/'):
+        base_url = base_url[:len(base_url)-1]
     if initial_url_check(base_url, proxy, timeout):
         # 获取权限
         auth_checker = NacosAuthChecker(base_url, proxy, timeout)
