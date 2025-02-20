@@ -51,7 +51,7 @@ class NacosAuthChecker:
         self.timeout = timeout
 
     def check_unauthorized_access(self):
-        url = f"{self.base_url}/nacos/v1/auth/users?pageNo=1&pageSize=100&search=accurate"
+        url = f"{self.base_url}/nacos/v1/cs/configs?dataId=&group=&appName=&config_tags=&pageNo=1&pageSize=10&tenant=&search=blur"
         try:
             response = self.session.get(
                 url, headers=self.headers, proxies=self.proxies, timeout=self.timeout, verify=False)
@@ -143,7 +143,7 @@ class NacosConfigExporter:
                 base_url_host, namespace['namespaceShowName'])
             os.makedirs(namespace_dir, exist_ok=True)
 
-            url = (f"{self.base_url}/nacos/v1/cs/configs?pageNo=1&pageSize=100"
+            url = (f"{self.base_url}/nacos/v1/cs/configs?pageNo=1&pageSize=1000"
                    f"&search=accurate&dataId=&group=&tenant={namespace['namespace']}&accessToken={self.token}&username={self.username}")
             try:
                 response = self.session.get(url, headers=self.headers, proxies=self.proxies, timeout=self.timeout)
